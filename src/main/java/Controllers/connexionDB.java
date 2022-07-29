@@ -15,7 +15,7 @@ import java.sql.SQLException;
  */
 public class connexionDB {
     
-    protected String DBUrl = "jdbc:mysql://localhost:3306/ecommerce";
+    protected String DBUrl = "jdbc:mysql://localhost:3306/Ecommerce";
     protected String userName = "root";
     protected String password = "";
     protected Connection connexion; 

@@ -8,6 +8,8 @@ import Models.VoitureModel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,10 +24,39 @@ import javax.servlet.http.Part;
  *
  * @author BABA SAIDOU DIEME
  */
-public class voiture extends connexionDB {
+public class voiture {
     
-    public boolean insertArticle(VoitureModel voiture,HttpServletRequest request) throws SQLException, IOException, ServletException {
-         InputStream inputStream = null; // input stream of the upload file
+    private String jdbcURL;
+    private String jdbcUsername;
+    private String jdbcPassword;
+    private Connection jdbcConnection;
+
+    public voiture(String jdbcURL, String jdbcUsername, String jdbcPassword) {
+        this.jdbcURL = jdbcURL;
+        this.jdbcUsername = jdbcUsername;
+        this.jdbcPassword = jdbcPassword;
+    }
+
+    protected void connect() throws SQLException {
+        if (jdbcConnection == null || jdbcConnection.isClosed()) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+            } catch (ClassNotFoundException e) {
+                throw new SQLException(e);
+            }
+            jdbcConnection = DriverManager.getConnection(jdbcURL, jdbcUsername, jdbcPassword);
+        }
+    }
+
+    protected void disconnect() throws SQLException {
+        if (jdbcConnection != null && !jdbcConnection.isClosed()) {
+            jdbcConnection.close();
+        }
+    }
+
+    
+    public boolean insertVoiture(VoitureModel voiture,HttpServletRequest request) throws SQLException, IOException, ServletException {
+        InputStream inputStream = null; // input stream of the upload file
          
         // obtains the upload file part in this multipart request
         Part filePart = request.getPart("image");
@@ -37,12 +68,12 @@ public class voiture extends connexionDB {
             // obtains input stream of the upload file
             inputStream = filePart.getInputStream();
         }
-        String sql = "INSERT INTO article (designation, description, prix, image, stock, categorie_idcategorie) VALUES (?,?,?,?,?,?);";
+        String sql = "INSERT INTO voitures (designation, description, prix, image, stock, categorie_idcategorie) VALUES (?,?,?,?,?,?);";
         connect();
         PreparedStatement statement = null;
         boolean rowInserted = false;
         try{
-            statement = connexion.prepareStatement(sql);
+            statement = jdbcConnection.prepareStatement(sql);
             statement.setString(1, voiture.getDesignation());
             statement.setString(2, voiture.getDescription());
             statement.setDouble(3, voiture.getPrix());
@@ -65,14 +96,14 @@ public class voiture extends connexionDB {
         return rowInserted;
     }
 
-    public List<VoitureModel> listAllArticles() throws SQLException {
+    public List<VoitureModel> getAllVoiture() throws SQLException {
         List<VoitureModel> listVoiture = new ArrayList<>();
-        String sql = "SELECT * FROM article";
+        String sql = "SELECT * FROM voitures";
         connect();
         Statement statement = null;
         ResultSet resultSet = null;
         try{
-            statement = connexion.createStatement();
+            statement = jdbcConnection.createStatement();
             resultSet = statement.executeQuery(sql);
 
             while (resultSet.next()) {
@@ -101,14 +132,14 @@ public class voiture extends connexionDB {
         return listVoiture;
     }
     
-    public VoitureModel Articles(int mat) throws SQLException {
+    public VoitureModel voitures(int mat) throws SQLException {
         VoitureModel voiture = new VoitureModel() ;
-        String sql = "SELECT * FROM article where matricule == mat ";
+        String sql = "SELECT * FROM voitures where matricule == mat ";
         connect();
         Statement statement = null;
         ResultSet resultSet = null;
         try{
-            statement = connexion.createStatement();
+            statement = jdbcConnection.createStatement();
             resultSet = statement.executeQuery(sql);
         
             int matricule = resultSet.getInt("matricule");
